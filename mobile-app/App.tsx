@@ -1,0 +1,1 @@
+// App.tsx - entrypoint placeholder

@@ -1,0 +1,3 @@
+# Algorithm
+
+Algorithm module placeholder.

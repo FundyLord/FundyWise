@@ -1,0 +1,1 @@
+# group_service.py - service placeholder

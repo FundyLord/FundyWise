@@ -1,0 +1,1 @@
+# CMakeLists.txt - build configuration placeholder

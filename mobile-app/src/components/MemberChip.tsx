@@ -1,0 +1,1 @@
+// MemberChip.tsx - placeholder

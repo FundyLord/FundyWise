@@ -1,0 +1,1 @@
+// colors.ts - constants placeholder

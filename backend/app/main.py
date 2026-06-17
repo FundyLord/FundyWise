@@ -1,0 +1,1 @@
+# main.py - application entrypoint placeholder

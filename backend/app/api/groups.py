@@ -1,0 +1,1 @@
+# groups.py - API endpoints placeholder
