@@ -1,1 +1,0 @@
-// ExpenseCard.tsx - placeholder

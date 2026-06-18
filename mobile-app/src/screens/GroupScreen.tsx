@@ -1,1 +1,0 @@
-// GroupScreen.tsx - placeholder
