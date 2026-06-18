@@ -11,3 +11,7 @@ class SettlementTransaction(BaseModel):
 
 class SettlementResponse(BaseModel):
     transactions: list[SettlementTransaction]
+
+
+class BalanceResponse(BaseModel):
+    balances: dict[int, float]
