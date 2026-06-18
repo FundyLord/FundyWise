@@ -12,3 +12,11 @@ class GroupResponse(BaseModel):
     id: int
     name: str
     created_by: int
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class GroupMemberCreate(BaseModel):
+    user_id: int
+
