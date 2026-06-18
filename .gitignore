@@ -4,3 +4,11 @@
 build/
 *.so
 tests
+
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
