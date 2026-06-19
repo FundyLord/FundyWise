@@ -9,11 +9,20 @@ import {
 } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import { RootStackParamList } from "../navigation/AppNavigator";
 import { createGroup } from "../services/api";
 
+type CreateGroupScreenNavigationProp =
+  NativeStackNavigationProp<
+    RootStackParamList,
+    "CreateGroup"
+  >;
+
 export default function CreateGroupScreen() {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<CreateGroupScreenNavigationProp>();
 
   const [groupName, setGroupName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,7 +39,7 @@ export default function CreateGroupScreen() {
     try {
       setLoading(true);
 
-      await createGroup({
+      const newGroup = await createGroup({
         name: groupName,
         created_by: 1,
       });
@@ -40,7 +49,12 @@ export default function CreateGroupScreen() {
         "Group created successfully."
       );
 
-      navigation.navigate("GroupsList" as never);
+      navigation.navigate(
+        "SelectMembers",
+        {
+          groupId: newGroup.id,
+        }
+      );
     } catch (error) {
       console.error(error);
 

@@ -6,6 +6,7 @@ import axios from "axios";
       GroupDetails,
       GroupCreate,
       SettlementResponse,
+      User,
     } from "../types/models";
 
 const API_BASE_URL = "http://192.168.29.134:8000";
@@ -71,5 +72,10 @@ export async function createGroup(
     group
   );
 
+  return response.data;
+}
+
+export async function getUsers(): Promise<User[]> {
+  const response = await api.get<User[]>("/users");
   return response.data;
 }

@@ -6,6 +6,7 @@ import GroupDetailsScreen from "../screens/GroupDetailsScreen";
 import AddExpenseScreen from "../screens/AddExpenseScreen";
 import SettlementScreen from "../screens/SettlementScreen";
 import CreateGroupScreen from "../screens/CreateGroupScreen";
+import SelectMembersScreen from "../screens/SelectMembersScreen";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -20,6 +21,9 @@ export type RootStackParamList = {
     groupId: number;
   };
   CreateGroup: undefined;
+  SelectMembers: {
+    groupId: number;
+  };
 };
 
 const Stack =
@@ -56,6 +60,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="CreateGroup"
         component={CreateGroupScreen}
+      />
+
+      <Stack.Screen
+        name="SelectMembers"
+        component={SelectMembersScreen}
       />
     </Stack.Navigator>
   );
