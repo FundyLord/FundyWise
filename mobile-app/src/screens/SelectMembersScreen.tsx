@@ -1,16 +1,37 @@
 import { useEffect, useState } from "react";
 import {
   View,
-  Text,
+ Text,
   StyleSheet,
   Button,
 } from "react-native";
-import { useRoute } from "@react-navigation/native";
+
+import {
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+import { RootStackParamList } from "../navigation/AppNavigator";
 
 import { User } from "../types/models";
-import { getUsers } from "../services/api";
+
+import {
+  getUsers,
+  addGroupMember,
+} from "../services/api";
+
+type SelectMembersScreenNavigationProp =
+  NativeStackNavigationProp<
+    RootStackParamList,
+    "SelectMembers"
+  >;
 
 export default function SelectMembersScreen() {
+  const navigation =
+    useNavigation<SelectMembersScreenNavigationProp>();
+
   const route = useRoute();
 
   const { groupId } = route.params as {
@@ -18,6 +39,8 @@ export default function SelectMembersScreen() {
   };
 
   const [users, setUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] =
+    useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,6 +61,41 @@ export default function SelectMembersScreen() {
     loadUsers();
   }, []);
 
+  function toggleUser(userId: number) {
+    setSelectedUsers((previous) => {
+      if (previous.includes(userId)) {
+        return previous.filter(
+          (id) => id !== userId
+        );
+      }
+
+      return [...previous, userId];
+    });
+  }
+
+  async function handleContinue() {
+    try {
+      for (const userId of selectedUsers) {
+        await addGroupMember(
+          groupId,
+          userId
+        );
+      }
+
+      navigation.navigate(
+        "GroupDetails",
+        {
+          groupId,
+        }
+      );
+    } catch (error) {
+      console.error(
+        "Failed to add members:",
+        error
+      );
+    }
+  }
+
   if (loading) {
     return (
       <View style={styles.container}>
@@ -57,14 +115,22 @@ export default function SelectMembersScreen() {
       </Text>
 
       {users.map((user) => (
-        <Text key={user.id}>
-          {user.name}
-        </Text>
+        <Button
+          key={user.id}
+          title={
+            selectedUsers.includes(user.id)
+              ? `✓ ${user.name}`
+              : user.name
+          }
+          onPress={() =>
+            toggleUser(user.id)
+          }
+        />
       ))}
 
       <Button
         title="Continue"
-        onPress={() => {}}
+        onPress={handleContinue}
       />
     </View>
   );

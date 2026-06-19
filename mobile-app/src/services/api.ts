@@ -79,3 +79,15 @@ export async function getUsers(): Promise<User[]> {
   const response = await api.get<User[]>("/users");
   return response.data;
 }
+
+export async function addGroupMember(
+  groupId: number,
+  userId: number
+): Promise<void> {
+  await api.post(
+    `/groups/${groupId}/members`,
+    {
+      user_id: userId,
+    }
+  );
+}
