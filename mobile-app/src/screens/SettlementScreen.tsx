@@ -1,20 +1,65 @@
+import { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import {
+  SettlementTransaction,
+} from "../types/models";
+
+import {
+  getSettlements,
+} from "../services/api";
+
 export default function SettlementScreen() {
+  const [transactions, setTransactions] = useState<
+    SettlementTransaction[]
+  >([]);
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadSettlements() {
+      try {
+        const data = await getSettlements(2);
+        setTransactions(data.transactions);
+      } catch (error) {
+        console.error(
+          "Failed to load settlements:",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSettlements();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Loading settlements...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Settlements</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.transactionText}>
-          User 2 pays User 1
-        </Text>
+      {transactions.map((transaction, index) => (
+        <View key={index} style={styles.card}>
+          <Text style={styles.transactionText}>
+            User {transaction.from_user_id}
+            {" "}pays{" "}
+            User {transaction.to_user_id}
+          </Text>
 
-        <Text style={styles.amount}>
-          ₹500
-        </Text>
-      </View>
+          <Text style={styles.amount}>
+            ₹{transaction.amount}
+          </Text>
+        </View>
+      ))}
     </SafeAreaView>
   );
 }
@@ -35,6 +80,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 16,
+    marginBottom: 12,
   },
 
   transactionText: {

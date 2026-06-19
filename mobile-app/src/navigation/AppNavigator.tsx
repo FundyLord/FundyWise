@@ -6,7 +6,18 @@ import GroupDetailsScreen from "../screens/GroupDetailsScreen";
 import AddExpenseScreen from "../screens/AddExpenseScreen";
 import SettlementScreen from "../screens/SettlementScreen";
 
-const Stack = createNativeStackNavigator();
+export type RootStackParamList = {
+  Home: undefined;
+  GroupsList: undefined;
+  GroupDetails: {
+    groupId: number;
+  };
+  AddExpense: undefined;
+  Settlements: undefined;
+};
+
+const Stack =
+  createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   return (
