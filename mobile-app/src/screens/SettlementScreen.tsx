@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRoute } from "@react-navigation/native";
 
 import {
   SettlementTransaction,
@@ -11,6 +12,12 @@ import {
 } from "../services/api";
 
 export default function SettlementScreen() {
+  const route = useRoute();
+
+  const { groupId } = route.params as {
+    groupId: number;
+  };
+
   const [transactions, setTransactions] = useState<
     SettlementTransaction[]
   >([]);
@@ -20,7 +27,9 @@ export default function SettlementScreen() {
   useEffect(() => {
     async function loadSettlements() {
       try {
-        const data = await getSettlements(2);
+        const data =
+          await getSettlements(groupId);
+
         setTransactions(data.transactions);
       } catch (error) {
         console.error(
@@ -33,7 +42,7 @@ export default function SettlementScreen() {
     }
 
     loadSettlements();
-  }, []);
+  }, [groupId]);
 
   if (loading) {
     return (
@@ -45,10 +54,15 @@ export default function SettlementScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Settlements</Text>
+      <Text style={styles.title}>
+        Settlements
+      </Text>
 
       {transactions.map((transaction, index) => (
-        <View key={index} style={styles.card}>
+        <View
+          key={index}
+          style={styles.card}
+        >
           <Text style={styles.transactionText}>
             User {transaction.from_user_id}
             {" "}pays{" "}

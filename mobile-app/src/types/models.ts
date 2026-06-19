@@ -4,6 +4,11 @@ export interface Group {
   created_by: number;
 }
 
+export interface GroupCreate {
+  name: string;
+  created_by: number;
+}
+
 export interface SettlementTransaction {
   from_user_id: number;
   to_user_id: number;

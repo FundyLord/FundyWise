@@ -1,11 +1,12 @@
 import axios from "axios";
-import {
-  Expense,
-  ExpenseCreate,
-  Group,
-  GroupDetails,
-  SettlementResponse,
-} from "../types/models";
+    import {
+      Expense,
+      ExpenseCreate,
+      Group,
+      GroupDetails,
+      GroupCreate,
+      SettlementResponse,
+    } from "../types/models";
 
 const API_BASE_URL = "http://192.168.29.134:8000";
 
@@ -57,6 +58,17 @@ export async function createExpense(
   const response = await api.post<Expense>(
     "/expenses",
     expense
+  );
+
+  return response.data;
+}
+
+export async function createGroup(
+  group: GroupCreate
+): Promise<Group> {
+  const response = await api.post<Group>(
+    "/groups",
+    group
   );
 
   return response.data;

@@ -18,6 +18,16 @@ export default function HomeScreen() {
           onPress={() => navigation.navigate("GroupsList" as never)}
         />
       </View>
+
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Create Group"
+          onPress={() =>
+            navigation.navigate("CreateGroup" as never)
+          }
+        />
+      </View>
+
     </View>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  View,
   Text,
   StyleSheet,
   TextInput,
@@ -9,9 +8,17 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useRoute } from "@react-navigation/native";
+
 import { createExpense } from "../services/api";
 
 export default function AddExpenseScreen() {
+  const route = useRoute();
+
+  const { groupId } = route.params as {
+    groupId: number;
+  };
+
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [paidBy, setPaidBy] = useState("");
@@ -22,7 +29,7 @@ export default function AddExpenseScreen() {
       const paidByValue = Number(paidBy);
 
       await createExpense({
-        group_id: 2,
+        group_id: groupId,
         paid_by: paidByValue,
         amount: amountValue,
         description,

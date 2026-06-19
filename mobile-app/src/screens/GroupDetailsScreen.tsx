@@ -5,6 +5,10 @@ import {
   useRoute,
 } from "@react-navigation/native";
 
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+import { RootStackParamList } from "../navigation/AppNavigator";
+
 import {
   Expense,
   GroupDetails,
@@ -15,8 +19,16 @@ import {
   getGroupExpenses,
 } from "../services/api";
 
+type GroupDetailsScreenNavigationProp =
+  NativeStackNavigationProp<
+    RootStackParamList,
+    "GroupDetails"
+  >;
+
 export default function GroupDetailsScreen() {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<GroupDetailsScreenNavigationProp>();
+
   const route = useRoute();
 
   const { groupId } = route.params as {
@@ -96,7 +108,10 @@ export default function GroupDetailsScreen() {
           title="Add Expense"
           onPress={() =>
             navigation.navigate(
-              "AddExpense" as never
+              "AddExpense",
+              {
+                groupId,
+              }
             )
           }
         />
@@ -107,7 +122,10 @@ export default function GroupDetailsScreen() {
           title="View Settlements"
           onPress={() =>
             navigation.navigate(
-              "Settlements" as never
+              "Settlements",
+              {
+                groupId,
+              }
             )
           }
         />
