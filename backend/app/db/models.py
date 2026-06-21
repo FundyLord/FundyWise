@@ -20,8 +20,25 @@ class User(Base):
         primary_key=True
     )
 
-    name: Mapped[str] = mapped_column(
+    name: Mapped[str | None] = mapped_column(
         String(100),
+        nullable=True
+    )
+
+    auth_user_id: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        unique=True
+    )
+
+    username: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False,
+        unique=True
+    )
+
+    full_name: Mapped[str] = mapped_column(
+        String(255),
         nullable=False
     )
 
@@ -29,7 +46,6 @@ class User(Base):
         DateTime,
         server_default=func.now()
     )
-
 class Group(Base):
     __tablename__ = "groups"
 

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Button,
   ScrollView,
+  Alert,
 } from "react-native";
 
 import {
@@ -27,7 +28,11 @@ import {
   getGroup,
   getGroupExpenses,
   getGroupMembers,
+  deleteGroup,
+  getUserByAuthId,
 } from "../services/api";
+
+import { supabase } from "../services/supabase";
 
 type GroupDetailsScreenNavigationProp =
   NativeStackNavigationProp<
@@ -54,7 +59,11 @@ export default function GroupDetailsScreen() {
   const [members, setMembers] =
     useState<User[]>([]);
 
-  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] =
+    useState<User | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -70,6 +79,20 @@ export default function GroupDetailsScreen() {
 
           const memberData =
             await getGroupMembers(groupId);
+
+          const {
+            data: { session },
+          } =
+            await supabase.auth.getSession();
+
+          if (session) {
+            const userData =
+              await getUserByAuthId(
+                session.user.id
+              );
+
+            setCurrentUser(userData);
+          }
 
           setGroup(groupData);
           setExpenses(expenseData);
@@ -98,14 +121,81 @@ export default function GroupDetailsScreen() {
     );
 
     return user
-      ? user.name
+      ? user.username
       : `User ${userId}`;
+  }
+
+  async function handleDeleteGroup() {
+    Alert.alert(
+      "Delete Group",
+      "This will permanently delete the group, members, expenses and settlements.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const {
+                data: { session },
+              } =
+                await supabase.auth.getSession();
+
+              if (!session) {
+                throw new Error(
+                  "No active session"
+                );
+              }
+
+              await deleteGroup(
+                groupId,
+                session.user.id
+              );
+
+              Alert.alert(
+                "Success",
+                "Group deleted successfully"
+              );
+
+              navigation.reset({
+                index: 0,
+                routes: [
+                  {
+                    name:
+                      "GroupsList",
+                  },
+                ],
+              });
+            } catch (error) {
+              console.error(
+                "Failed to delete group:",
+                error
+              );
+
+              Alert.alert(
+                "Error",
+                "Failed to delete group"
+              );
+            }
+          },
+        },
+      ]
+    );
   }
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading group...</Text>
+      <View
+        style={
+          styles.loadingContainer
+        }
+      >
+        <Text>
+          Loading group...
+        </Text>
       </View>
     );
   }
@@ -120,6 +210,15 @@ export default function GroupDetailsScreen() {
         {group?.name}
       </Text>
 
+      <Text style={styles.creatorText}>
+        Created By:{" "}
+        {group
+          ? getUserName(
+              group.created_by
+            )
+          : ""}
+      </Text>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
           Members
@@ -127,7 +226,7 @@ export default function GroupDetailsScreen() {
 
         {members.map((member) => (
           <Text key={member.id}>
-            {member.name}
+            {member.username}
           </Text>
         ))}
       </View>
@@ -151,7 +250,8 @@ export default function GroupDetailsScreen() {
             </Text>
 
             <Text>
-              Amount: ₹{expense.amount}
+              Amount: ₹
+              {expense.amount}
             </Text>
 
             <Text>
@@ -191,51 +291,73 @@ export default function GroupDetailsScreen() {
           }
         />
       </View>
+
+      {currentUser?.id ===
+        group?.created_by && (
+        <View
+          style={
+            styles.buttonContainer
+          }
+        >
+          <Button
+            title="Delete Group"
+            onPress={
+              handleDeleteGroup
+            }
+          />
+        </View>
+      )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    padding: 16,
-  },
+const styles =
+  StyleSheet.create({
+    loadingContainer: {
+      flex: 1,
+      padding: 16,
+    },
 
-  container: {
-    flexGrow: 1,
-    padding: 16,
-  },
+    container: {
+      flexGrow: 1,
+      padding: 16,
+    },
 
-  groupName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
+    groupName: {
+      fontSize: 24,
+      fontWeight: "bold",
+      marginBottom: 8,
+    },
 
-  section: {
-    marginBottom: 24,
-  },
+    creatorText: {
+      fontSize: 16,
+      marginBottom: 20,
+    },
 
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
+    section: {
+      marginBottom: 24,
+    },
 
-  expenseCard: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      marginBottom: 8,
+    },
 
-  expenseDescription: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
+    expenseCard: {
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 12,
+    },
 
-  buttonContainer: {
-    marginBottom: 12,
-  },
-});
+    expenseDescription: {
+      fontSize: 16,
+      fontWeight: "600",
+      marginBottom: 4,
+    },
+
+    buttonContainer: {
+      marginBottom: 12,
+    },
+  });

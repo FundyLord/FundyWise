@@ -18,11 +18,22 @@ export const api = axios.create({
   },
 });
 
-export async function getGroups(): Promise<Group[]> {
-  const response = await api.get<Group[]>("/groups");
+export async function getGroups(
+  authUserId: string
+): Promise<Group[]> {
+  const response =
+    await api.get<Group[]>(
+      "/groups",
+      {
+        params: {
+          auth_user_id:
+            authUserId,
+        },
+      }
+    );
+
   return response.data;
 }
-
 export async function getSettlements(
   groupId: number
 ): Promise<SettlementResponse> {
@@ -107,5 +118,30 @@ export async function settleGroup(
 ): Promise<void> {
   await api.post(
     `/groups/${groupId}/settle`
+  );
+}
+
+export async function getUserByAuthId(
+  authUserId: string
+): Promise<User> {
+  const response = await api.get<User>(
+    `/users/auth/${authUserId}`
+  );
+
+  return response.data;
+}
+
+export async function deleteGroup(
+  groupId: number,
+  authUserId: string
+): Promise<void> {
+  await api.delete(
+    `/groups/${groupId}`,
+    {
+      params: {
+        auth_user_id:
+          authUserId,
+      },
+    }
   );
 }

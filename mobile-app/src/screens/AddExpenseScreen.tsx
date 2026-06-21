@@ -241,7 +241,7 @@ export default function AddExpenseScreen() {
               <Picker.Item
                 key={member.id}
                 label={
-                  member.name
+                  member.username
                 }
                 value={
                   member.id
@@ -279,7 +279,7 @@ export default function AddExpenseScreen() {
                   styles.participantName
                 }
               >
-                {member.name}
+                {member.username}
               </Text>
             </View>
           )

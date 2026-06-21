@@ -1,6 +1,7 @@
 export interface User {
   id: number;
-  name: string;
+  username: string;
+  full_name: string;
 }
 
 export interface Group {

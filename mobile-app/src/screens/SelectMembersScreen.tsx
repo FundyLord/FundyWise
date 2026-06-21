@@ -21,7 +21,10 @@ import { User } from "../types/models";
 import {
   getUsers,
   addGroupMember,
+  getUserByAuthId,
 } from "../services/api";
+
+import { supabase } from "../services/supabase";
 
 type SelectMembersScreenNavigationProp =
   NativeStackNavigationProp<
@@ -39,16 +42,46 @@ export default function SelectMembersScreen() {
     groupId: number;
   };
 
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] =
+    useState<User[]>([]);
+
   const [selectedUsers, setSelectedUsers] =
     useState<number[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const [currentUserId, setCurrentUserId] =
+    useState<number | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     async function loadUsers() {
       try {
-        const data = await getUsers();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          return;
+        }
+
+        const currentUser =
+          await getUserByAuthId(
+            session.user.id
+          );
+
+        setCurrentUserId(
+          currentUser.id
+        );
+
+        const data =
+          await getUsers();
+
         setUsers(data);
+
+        setSelectedUsers([
+          currentUser.id,
+        ]);
       } catch (error) {
         console.error(
           "Failed to load users:",
@@ -62,16 +95,31 @@ export default function SelectMembersScreen() {
     loadUsers();
   }, []);
 
-  function toggleUser(userId: number) {
-    setSelectedUsers((previous) => {
-      if (previous.includes(userId)) {
-        return previous.filter(
-          (id) => id !== userId
-        );
-      }
+  function toggleUser(
+    userId: number
+  ) {
+    if (
+      userId === currentUserId
+    ) {
+      return;
+    }
 
-      return [...previous, userId];
-    });
+    setSelectedUsers(
+      (previous) => {
+        if (
+          previous.includes(userId)
+        ) {
+          return previous.filter(
+            (id) => id !== userId
+          );
+        }
+
+        return [
+          ...previous,
+          userId,
+        ];
+      }
+    );
   }
 
   async function handleContinue() {
@@ -100,10 +148,26 @@ export default function SelectMembersScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Loading users...</Text>
+        <Text>
+          Loading users...
+        </Text>
       </View>
     );
   }
+
+  const currentUser =
+    users.find(
+      (user) =>
+        user.id ===
+        currentUserId
+    );
+
+  const otherUsers =
+    users.filter(
+      (user) =>
+        user.id !==
+        currentUserId
+    );
 
   return (
     <ScrollView
@@ -119,28 +183,68 @@ export default function SelectMembersScreen() {
         Group ID: {groupId}
       </Text>
 
-      {users.map((user) => (
-        <View
-          key={user.id}
-          style={styles.userButton}
-        >
-          <Button
-            title={
-              selectedUsers.includes(user.id)
-                ? `✓ ${user.name}`
-                : user.name
-            }
-            onPress={() =>
-              toggleUser(user.id)
-            }
-          />
-        </View>
-      ))}
+      {currentUser && (
+        <>
+          <Text
+            style={styles.sectionTitle}
+          >
+            Creator
+          </Text>
 
-      <View style={styles.continueButton}>
+          <View
+            style={styles.userButton}
+          >
+            <Button
+              title={`✓ ${currentUser.username}`}
+              disabled
+              onPress={() => {}}
+            />
+          </View>
+        </>
+      )}
+
+      <Text
+        style={styles.sectionTitle}
+      >
+        Add Members
+      </Text>
+
+      {otherUsers.map(
+        (user) => (
+          <View
+            key={user.id}
+            style={
+              styles.userButton
+            }
+          >
+            <Button
+              title={
+                selectedUsers.includes(
+                  user.id
+                )
+                  ? `✓ ${user.username}`
+                  : user.username
+              }
+              onPress={() =>
+                toggleUser(
+                  user.id
+                )
+              }
+            />
+          </View>
+        )
+      )}
+
+      <View
+        style={
+          styles.continueButton
+        }
+      >
         <Button
           title="Continue"
-          onPress={handleContinue}
+          onPress={
+            handleContinue
+          }
         />
       </View>
     </ScrollView>
@@ -166,6 +270,13 @@ const styles = StyleSheet.create({
 
   groupId: {
     marginBottom: 20,
+  },
+
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 10,
+    marginTop: 10,
   },
 
   userButton: {

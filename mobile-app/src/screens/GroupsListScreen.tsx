@@ -1,4 +1,8 @@
-import { useState, useCallback } from "react";
+import {
+  useState,
+  useCallback,
+} from "react";
+
 import {
   View,
   Text,
@@ -15,8 +19,14 @@ import {
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { RootStackParamList } from "../navigation/AppNavigator";
+
 import { Group } from "../types/models";
-import { getGroups } from "../services/api";
+
+import {
+  getGroups,
+} from "../services/api";
+
+import { supabase } from "../services/supabase";
 
 type GroupsListScreenNavigationProp =
   NativeStackNavigationProp<
@@ -28,8 +38,11 @@ export default function GroupsListScreen() {
   const navigation =
     useNavigation<GroupsListScreenNavigationProp>();
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [groups, setGroups] =
+    useState<Group[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -37,7 +50,19 @@ export default function GroupsListScreen() {
         try {
           setLoading(true);
 
-          const data = await getGroups();
+          const {
+            data: { session },
+          } =
+            await supabase.auth.getSession();
+
+          if (!session) {
+            return;
+          }
+
+          const data =
+            await getGroups(
+              session.user.id
+            );
 
           setGroups(data);
         } catch (error) {
@@ -57,7 +82,9 @@ export default function GroupsListScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text>Loading groups...</Text>
+        <Text>
+          Loading groups...
+        </Text>
       </View>
     );
   }
@@ -72,52 +99,62 @@ export default function GroupsListScreen() {
         Your Groups
       </Text>
 
-      {groups.map((group) => (
-        <View
-          key={group.id}
-          style={styles.groupCard}
-        >
-          <Text style={styles.groupName}>
-            {group.name}
-          </Text>
+      {groups.length === 0 ? (
+        <Text>
+          No groups found.
+        </Text>
+      ) : (
+        groups.map((group) => (
+          <View
+            key={group.id}
+            style={styles.groupCard}
+          >
+            <Text
+              style={styles.groupName}
+            >
+              {group.name}
+            </Text>
 
-          <Button
-            title="View Details"
-            onPress={() =>
-              navigation.navigate(
-                "GroupDetails",
-                {
-                  groupId: group.id,
-                }
-              )
-            }
-          />
-        </View>
-      ))}
+            <Button
+              title="View Details"
+              onPress={() =>
+                navigation.navigate(
+                  "GroupDetails",
+                  {
+                    groupId:
+                      group.id,
+                  }
+                )
+              }
+            />
+          </View>
+        ))
+      )}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      padding: 16,
+    },
 
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
+    title: {
+      fontSize: 24,
+      fontWeight: "bold",
+      marginBottom: 20,
+    },
 
-  groupCard: {
-    padding: 16,
-    borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
+    groupCard: {
+      padding: 16,
+      borderWidth: 1,
+      borderRadius: 8,
+      marginBottom: 12,
+    },
 
-  groupName: {
-    fontSize: 18,
-    marginBottom: 12,
-  },
-});
+    groupName: {
+      fontSize: 18,
+      marginBottom: 12,
+    },
+  });

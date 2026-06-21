@@ -82,7 +82,7 @@ export default function SettlementScreen() {
     );
 
     return user
-      ? user.name
+      ? user.username
       : `User ${userId}`;
   }
 

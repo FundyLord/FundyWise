@@ -13,7 +13,13 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { RootStackParamList } from "../navigation/AppNavigator";
-import { createGroup } from "../services/api";
+import { supabase } from "../services/supabase";
+import {
+  createGroup,
+  getUserByAuthId,
+} from "../services/api";
+
+
 
 type CreateGroupScreenNavigationProp =
   NativeStackNavigationProp<
@@ -40,9 +46,26 @@ export default function CreateGroupScreen() {
     try {
       setLoading(true);
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        Alert.alert(
+          "Error",
+          "You must be logged in."
+        );
+        return;
+      }
+
+      const currentUser =
+        await getUserByAuthId(
+          session.user.id
+        );
+
       const newGroup = await createGroup({
         name: groupName,
-        created_by: 1,
+        created_by: currentUser.id,
       });
 
       Alert.alert(

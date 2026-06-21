@@ -46,10 +46,6 @@ export default function LoginScreen() {
       "Success",
       "Logged in successfully"
     );
-
-    navigation.navigate(
-      "Home" as never
-    );
   }
 
   return (
