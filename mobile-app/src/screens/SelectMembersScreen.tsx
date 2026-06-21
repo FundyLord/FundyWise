@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import {
   View,
- Text,
+  Text,
   StyleSheet,
   Button,
+  ScrollView,
 } from "react-native";
 
 import {
@@ -98,53 +99,81 @@ export default function SelectMembersScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
         <Text>Loading users...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={
+        styles.container
+      }
+    >
       <Text style={styles.title}>
         Select Members
       </Text>
 
-      <Text>
+      <Text style={styles.groupId}>
         Group ID: {groupId}
       </Text>
 
       {users.map((user) => (
-        <Button
+        <View
           key={user.id}
-          title={
-            selectedUsers.includes(user.id)
-              ? `✓ ${user.name}`
-              : user.name
-          }
-          onPress={() =>
-            toggleUser(user.id)
-          }
-        />
+          style={styles.userButton}
+        >
+          <Button
+            title={
+              selectedUsers.includes(user.id)
+                ? `✓ ${user.name}`
+                : user.name
+            }
+            onPress={() =>
+              toggleUser(user.id)
+            }
+          />
+        </View>
       ))}
 
-      <Button
-        title="Continue"
-        onPress={handleContinue}
-      />
-    </View>
+      <View style={styles.continueButton}>
+        <Button
+          title="Continue"
+          onPress={handleContinue}
+        />
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
+    padding: 16,
+  },
+
+  container: {
+    flexGrow: 1,
     padding: 16,
   },
 
   title: {
     fontSize: 24,
     fontWeight: "bold",
+    marginBottom: 20,
+  },
+
+  groupId: {
+    marginBottom: 20,
+  },
+
+  userButton: {
+    marginBottom: 10,
+  },
+
+  continueButton: {
+    marginTop: 20,
     marginBottom: 20,
   },
 });

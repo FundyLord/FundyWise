@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Button,
+  ScrollView,
+} from "react-native";
+
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -26,7 +33,10 @@ export default function GroupsListScreen() {
         const data = await getGroups();
         setGroups(data);
       } catch (error) {
-        console.error("Failed to load groups:", error);
+        console.error(
+          "Failed to load groups:",
+          error
+        );
       } finally {
         setLoading(false);
       }
@@ -44,8 +54,14 @@ export default function GroupsListScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Your Groups</Text>
+    <ScrollView
+      contentContainerStyle={
+        styles.container
+      }
+    >
+      <Text style={styles.title}>
+        Your Groups
+      </Text>
 
       {groups.map((group) => (
         <View
@@ -69,13 +85,12 @@ export default function GroupsListScreen() {
           />
         </View>
       ))}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 16,
   },
 

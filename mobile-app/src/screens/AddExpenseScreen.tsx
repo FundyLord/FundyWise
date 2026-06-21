@@ -1,16 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Text,
   StyleSheet,
   TextInput,
   Button,
   Alert,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Picker } from "@react-native-picker/picker";
 
 import { useRoute } from "@react-navigation/native";
 
-import { createExpense } from "../services/api";
+import {
+  createExpense,
+  getGroupMembers,
+} from "../services/api";
+
+import { User } from "../types/models";
 
 export default function AddExpenseScreen() {
   const route = useRoute();
@@ -21,28 +28,69 @@ export default function AddExpenseScreen() {
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [paidBy, setPaidBy] = useState("");
+
+  const [paidBy, setPaidBy] =
+    useState<number | null>(null);
+
+  const [members, setMembers] =
+    useState<User[]>([]);
+
+  useEffect(() => {
+    async function loadMembers() {
+      try {
+        const data =
+          await getGroupMembers(groupId);
+
+        setMembers(data);
+
+        if (data.length > 0) {
+          setPaidBy(data[0].id);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load members:",
+          error
+        );
+      }
+    }
+
+    loadMembers();
+  }, [groupId]);
 
   async function handleAddExpense() {
     try {
       const amountValue = Number(amount);
-      const paidByValue = Number(paidBy);
+
+      if (members.length === 0) {
+        Alert.alert(
+          "Error",
+          "No members found in group."
+        );
+        return;
+      }
+
+      if (paidBy === null) {
+        Alert.alert(
+          "Error",
+          "Please select who paid."
+        );
+        return;
+      }
+
+      const shareAmount =
+        amountValue / members.length;
 
       await createExpense({
         group_id: groupId,
-        paid_by: paidByValue,
+        paid_by: paidBy,
         amount: amountValue,
         description,
-        participants: [
-          {
-            user_id: 1,
-            share_amount: amountValue / 2,
-          },
-          {
-            user_id: 2,
-            share_amount: amountValue / 2,
-          },
-        ],
+        participants: members.map(
+          (member) => ({
+            user_id: member.id,
+            share_amount: shareAmount,
+          })
+        ),
       });
 
       Alert.alert(
@@ -52,7 +100,10 @@ export default function AddExpenseScreen() {
 
       setDescription("");
       setAmount("");
-      setPaidBy("");
+
+      if (members.length > 0) {
+        setPaidBy(members[0].id);
+      }
     } catch (error) {
       console.error(error);
 
@@ -64,42 +115,71 @@ export default function AddExpenseScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Add Expense</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={
+          styles.container
+        }
+      >
+        <Text style={styles.title}>
+          Add Expense
+        </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Expense Description"
-        value={description}
-        onChangeText={setDescription}
-      />
+        <Text>
+          Members: {members.length}
+        </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Amount"
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Expense Description"
+          value={description}
+          onChangeText={setDescription}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Paid By User ID"
-        value={paidBy}
-        onChangeText={setPaidBy}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Amount"
+          keyboardType="numeric"
+          value={amount}
+          onChangeText={setAmount}
+        />
 
-      <Button
-        title="Add Expense"
-        onPress={handleAddExpense}
-      />
+        <Text style={styles.label}>
+          Paid By
+        </Text>
+
+        <Picker
+          selectedValue={paidBy}
+          onValueChange={(value) =>
+            setPaidBy(value)
+          }
+          style={styles.picker}
+        >
+          {members.map((member) => (
+            <Picker.Item
+              key={member.id}
+              label={member.name}
+              value={member.id}
+            />
+          ))}
+        </Picker>
+
+        <Button
+          title="Add Expense"
+          onPress={handleAddExpense}
+        />
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+  },
+
+  container: {
+    flexGrow: 1,
     padding: 16,
   },
 
@@ -113,6 +193,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,
+    marginBottom: 16,
+  },
+
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+
+  picker: {
     marginBottom: 16,
   },
 });

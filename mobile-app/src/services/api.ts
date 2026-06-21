@@ -91,3 +91,13 @@ export async function addGroupMember(
     }
   );
 }
+
+export async function getGroupMembers(
+  groupId: number
+): Promise<User[]> {
+  const response = await api.get<User[]>(
+    `/groups/${groupId}/members`
+  );
+
+  return response.data;
+}

@@ -6,6 +6,7 @@ import {
   TextInput,
   Button,
   Alert,
+  ScrollView,
 } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
@@ -68,7 +69,11 @@ export default function CreateGroupScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={
+        styles.container
+      }
+    >
       <Text style={styles.title}>
         Create Group
       </Text>
@@ -89,13 +94,13 @@ export default function CreateGroupScreen() {
         onPress={handleCreateGroup}
         disabled={loading}
       />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 16,
   },
 

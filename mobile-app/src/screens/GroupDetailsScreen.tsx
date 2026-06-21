@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Button } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Button,
+  ScrollView,
+} from "react-native";
 import {
   useNavigation,
   useRoute,
@@ -12,11 +18,13 @@ import { RootStackParamList } from "../navigation/AppNavigator";
 import {
   Expense,
   GroupDetails,
+  User,
 } from "../types/models";
 
 import {
   getGroup,
   getGroupExpenses,
+  getGroupMembers,
 } from "../services/api";
 
 type GroupDetailsScreenNavigationProp =
@@ -41,6 +49,9 @@ export default function GroupDetailsScreen() {
   const [expenses, setExpenses] =
     useState<Expense[]>([]);
 
+  const [members, setMembers] =
+    useState<User[]>([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,8 +63,12 @@ export default function GroupDetailsScreen() {
         const expenseData =
           await getGroupExpenses(groupId);
 
+        const memberData =
+          await getGroupMembers(groupId);
+
         setGroup(groupData);
         setExpenses(expenseData);
+        setMembers(memberData);
       } catch (error) {
         console.error(
           "Failed to load group:",
@@ -67,16 +82,34 @@ export default function GroupDetailsScreen() {
     loadGroup();
   }, [groupId]);
 
+  function getUserName(
+    userId: number
+  ): string {
+    const user = members.find(
+      (member) =>
+        Number(member.id) ===
+        Number(userId)
+    );
+
+    return user
+      ? user.name
+      : `User ${userId}`;
+  }
+
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
         <Text>Loading group...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      contentContainerStyle={
+        styles.container
+      }
+    >
       <Text style={styles.groupName}>
         {group?.name}
       </Text>
@@ -86,8 +119,11 @@ export default function GroupDetailsScreen() {
           Members
         </Text>
 
-        <Text>Yash</Text>
-        <Text>Test User</Text>
+        {members.map((member) => (
+          <Text key={member.id}>
+            {member.name}
+          </Text>
+        ))}
       </View>
 
       <View style={styles.section}>
@@ -96,10 +132,29 @@ export default function GroupDetailsScreen() {
         </Text>
 
         {expenses.map((expense) => (
-          <Text key={expense.id}>
-            {expense.description} - ₹
-            {expense.amount}
-          </Text>
+          <View
+            key={expense.id}
+            style={styles.expenseCard}
+          >
+            <Text
+              style={
+                styles.expenseDescription
+              }
+            >
+              {expense.description}
+            </Text>
+
+            <Text>
+              Amount: ₹{expense.amount}
+            </Text>
+
+            <Text>
+              Paid By:{" "}
+              {getUserName(
+                expense.paid_by
+              )}
+            </Text>
+          </View>
         ))}
       </View>
 
@@ -130,13 +185,18 @@ export default function GroupDetailsScreen() {
           }
         />
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
+    padding: 16,
+  },
+
+  container: {
+    flexGrow: 1,
     padding: 16,
   },
 
@@ -154,6 +214,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 8,
+  },
+
+  expenseCard: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+
+  expenseDescription: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
   },
 
   buttonContainer: {

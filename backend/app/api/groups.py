@@ -4,13 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.db.models import Group, GroupMember
-
+from app.db.models import (
+    Group,
+    GroupMember,
+    User,
+)
 from app.schemas.group import (
     GroupCreate,
     GroupMemberCreate,
     GroupResponse
 )
+from app.schemas.user import UserResponse
 
 router = APIRouter()
 
@@ -80,3 +84,35 @@ def add_member(
     return {
         "message": "Member added successfully"
     }
+
+@router.get(
+    "/groups/{group_id}/members",
+    response_model=list[UserResponse]
+)
+def get_group_members(
+    group_id: int,
+    db: Session = Depends(get_db)
+):
+    group = db.query(Group).filter(
+        Group.id == group_id
+    ).first()
+
+    if not group:
+        raise HTTPException(
+            status_code=404,
+            detail="Group not found"
+        )
+
+    members = (
+        db.query(User)
+        .join(
+            GroupMember,
+            User.id == GroupMember.user_id
+        )
+        .filter(
+            GroupMember.group_id == group_id
+        )
+        .all()
+    )
+
+    return members

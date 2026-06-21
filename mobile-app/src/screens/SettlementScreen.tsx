@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRoute } from "@react-navigation/native";
 
 import {
   SettlementTransaction,
+  User,
 } from "../types/models";
 
 import {
   getSettlements,
+  getUsers,
 } from "../services/api";
 
 export default function SettlementScreen() {
@@ -18,19 +25,28 @@ export default function SettlementScreen() {
     groupId: number;
   };
 
-  const [transactions, setTransactions] = useState<
-    SettlementTransaction[]
-  >([]);
+  const [transactions, setTransactions] =
+    useState<SettlementTransaction[]>([]);
+
+  const [users, setUsers] =
+    useState<User[]>([]);
 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadSettlements() {
+    async function loadData() {
       try {
-        const data =
+        const settlementData =
           await getSettlements(groupId);
 
-        setTransactions(data.transactions);
+        const usersData =
+          await getUsers();
+
+        setTransactions(
+          settlementData.transactions
+        );
+
+        setUsers(usersData);
       } catch (error) {
         console.error(
           "Failed to load settlements:",
@@ -41,46 +57,85 @@ export default function SettlementScreen() {
       }
     }
 
-    loadSettlements();
+    loadData();
   }, [groupId]);
+
+  function getUserName(
+    userId: number
+  ): string {
+    const user = users.find(
+      (u) =>
+        Number(u.id) ===
+        Number(userId)
+    );
+
+    return user
+      ? user.name
+      : `User ${userId}`;
+  }
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.loadingContainer}>
         <Text>Loading settlements...</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>
-        Settlements
-      </Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView
+        contentContainerStyle={
+          styles.container
+        }
+      >
+        <Text style={styles.title}>
+          Settlements
+        </Text>
 
-      {transactions.map((transaction, index) => (
-        <View
-          key={index}
-          style={styles.card}
-        >
-          <Text style={styles.transactionText}>
-            User {transaction.from_user_id}
-            {" "}pays{" "}
-            User {transaction.to_user_id}
-          </Text>
+        {transactions.map(
+          (transaction, index) => (
+            <View
+              key={index}
+              style={styles.card}
+            >
+              <Text
+                style={
+                  styles.transactionText
+                }
+              >
+                {getUserName(
+                  transaction.from_user_id
+                )}
+                {" "}pays{" "}
+                {getUserName(
+                  transaction.to_user_id
+                )}
+              </Text>
 
-          <Text style={styles.amount}>
-            ₹{transaction.amount}
-          </Text>
-        </View>
-      ))}
+              <Text style={styles.amount}>
+                ₹{transaction.amount}
+              </Text>
+            </View>
+          )
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    padding: 16,
+  },
+
+  container: {
+    flexGrow: 1,
     padding: 16,
   },
 
