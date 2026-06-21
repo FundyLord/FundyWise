@@ -6,9 +6,12 @@ import {
   Button,
   Alert,
   ScrollView,
+  View,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
+import Checkbox from "expo-checkbox";
 
 import {
   useRoute,
@@ -30,14 +33,22 @@ export default function AddExpenseScreen() {
     groupId: number;
   };
 
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
+  const [description, setDescription] =
+    useState("");
+
+  const [amount, setAmount] =
+    useState("");
 
   const [paidBy, setPaidBy] =
     useState<number | null>(null);
 
   const [members, setMembers] =
     useState<User[]>([]);
+
+  const [
+    selectedParticipants,
+    setSelectedParticipants,
+  ] = useState<number[]>([]);
 
   useEffect(() => {
     async function loadMembers() {
@@ -49,6 +60,12 @@ export default function AddExpenseScreen() {
 
         if (data.length > 0) {
           setPaidBy(data[0].id);
+
+          setSelectedParticipants(
+            data.map(
+              (member) => member.id
+            )
+          );
         }
       } catch (error) {
         console.error(
@@ -61,15 +78,38 @@ export default function AddExpenseScreen() {
     loadMembers();
   }, [groupId]);
 
+  function toggleParticipant(
+    userId: number
+  ) {
+    setSelectedParticipants(
+      (current) => {
+        if (
+          current.includes(userId)
+        ) {
+          return current.filter(
+            (id) => id !== userId
+          );
+        }
+
+        return [
+          ...current,
+          userId,
+        ];
+      }
+    );
+  }
+
   async function handleAddExpense() {
     try {
-      const amountValue = Number(amount);
+      const amountValue =
+        Number(amount);
 
       if (members.length === 0) {
         Alert.alert(
           "Error",
           "No members found in group."
         );
+
         return;
       }
 
@@ -78,23 +118,39 @@ export default function AddExpenseScreen() {
           "Error",
           "Please select who paid."
         );
+
+        return;
+      }
+
+      if (
+        selectedParticipants.length ===
+        0
+      ) {
+        Alert.alert(
+          "Error",
+          "Please select at least one participant."
+        );
+
         return;
       }
 
       const shareAmount =
-        amountValue / members.length;
+        amountValue /
+        selectedParticipants.length;
 
       await createExpense({
         group_id: groupId,
         paid_by: paidBy,
         amount: amountValue,
         description,
-        participants: members.map(
-          (member) => ({
-            user_id: member.id,
-            share_amount: shareAmount,
-          })
-        ),
+        participants:
+          selectedParticipants.map(
+            (userId) => ({
+              user_id: userId,
+              share_amount:
+                shareAmount,
+            })
+          ),
       });
 
       Alert.alert(
@@ -104,11 +160,6 @@ export default function AddExpenseScreen() {
           {
             text: "OK",
             onPress: () => {
-              console.log(
-                "Can Go Back:",
-                navigation.canGoBack()
-              );
-
               navigation.goBack();
             },
           },
@@ -119,7 +170,16 @@ export default function AddExpenseScreen() {
       setAmount("");
 
       if (members.length > 0) {
-        setPaidBy(members[0].id);
+        setPaidBy(
+          members[0].id
+        );
+
+        setSelectedParticipants(
+          members.map(
+            (member) =>
+              member.id
+          )
+        );
       }
     } catch (error) {
       console.error(error);
@@ -132,7 +192,9 @@ export default function AddExpenseScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={styles.safeArea}
+    >
       <ScrollView
         contentContainerStyle={
           styles.container
@@ -150,7 +212,9 @@ export default function AddExpenseScreen() {
           style={styles.input}
           placeholder="Expense Description"
           value={description}
-          onChangeText={setDescription}
+          onChangeText={
+            setDescription
+          }
         />
 
         <TextInput
@@ -172,54 +236,118 @@ export default function AddExpenseScreen() {
           }
           style={styles.picker}
         >
-          {members.map((member) => (
-            <Picker.Item
-              key={member.id}
-              label={member.name}
-              value={member.id}
-            />
-          ))}
+          {members.map(
+            (member) => (
+              <Picker.Item
+                key={member.id}
+                label={
+                  member.name
+                }
+                value={
+                  member.id
+                }
+              />
+            )
+          )}
         </Picker>
 
-        <Button
-          title="Add Expense"
-          onPress={handleAddExpense}
-        />
+        <Text style={styles.label}>
+          Participants
+        </Text>
+
+        {members.map(
+          (member) => (
+            <View
+              key={member.id}
+              style={
+                styles.participantRow
+              }
+            >
+              <Checkbox
+                value={selectedParticipants.includes(
+                  member.id
+                )}
+                onValueChange={() =>
+                  toggleParticipant(
+                    member.id
+                  )
+                }
+              />
+
+              <Text
+                style={
+                  styles.participantName
+                }
+              >
+                {member.name}
+              </Text>
+            </View>
+          )
+        )}
+
+        <View
+          style={
+            styles.buttonContainer
+          }
+        >
+          <Button
+            title="Add Expense"
+            onPress={
+              handleAddExpense
+            }
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
+const styles =
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+    },
 
-  container: {
-    flexGrow: 1,
-    padding: 16,
-  },
+    container: {
+      flexGrow: 1,
+      padding: 16,
+    },
 
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
+    title: {
+      fontSize: 24,
+      fontWeight: "bold",
+      marginBottom: 20,
+    },
 
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-  },
+    input: {
+      borderWidth: 1,
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
+    },
 
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-  },
+    label: {
+      fontSize: 16,
+      fontWeight: "600",
+      marginBottom: 8,
+    },
 
-  picker: {
-    marginBottom: 16,
-  },
-});
+    picker: {
+      marginBottom: 16,
+    },
+
+    participantRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+
+    participantName: {
+      marginLeft: 12,
+      fontSize: 16,
+    },
+
+    buttonContainer: {
+      marginTop: 20,
+    },
+  });
