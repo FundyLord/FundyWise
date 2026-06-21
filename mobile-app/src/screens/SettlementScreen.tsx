@@ -1,12 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRoute } from "@react-navigation/native";
+
+import {
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 
 import {
   SettlementTransaction,
@@ -33,32 +38,36 @@ export default function SettlementScreen() {
 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const settlementData =
-          await getSettlements(groupId);
+  useFocusEffect(
+    useCallback(() => {
+      async function loadData() {
+        try {
+          setLoading(true);
 
-        const usersData =
-          await getUsers();
+          const settlementData =
+            await getSettlements(groupId);
 
-        setTransactions(
-          settlementData.transactions
-        );
+          const usersData =
+            await getUsers();
 
-        setUsers(usersData);
-      } catch (error) {
-        console.error(
-          "Failed to load settlements:",
-          error
-        );
-      } finally {
-        setLoading(false);
+          setTransactions(
+            settlementData.transactions
+          );
+
+          setUsers(usersData);
+        } catch (error) {
+          console.error(
+            "Failed to load settlements:",
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
       }
-    }
 
-    loadData();
-  }, [groupId]);
+      loadData();
+    }, [groupId])
+  );
 
   function getUserName(
     userId: number
@@ -93,30 +102,38 @@ export default function SettlementScreen() {
           Settlements
         </Text>
 
-        {transactions.map(
-          (transaction, index) => (
-            <View
-              key={index}
-              style={styles.card}
-            >
-              <Text
-                style={
-                  styles.transactionText
-                }
+        {transactions.length === 0 ? (
+          <Text>
+            No settlements required.
+          </Text>
+        ) : (
+          transactions.map(
+            (transaction, index) => (
+              <View
+                key={index}
+                style={styles.card}
               >
-                {getUserName(
-                  transaction.from_user_id
-                )}
-                {" "}pays{" "}
-                {getUserName(
-                  transaction.to_user_id
-                )}
-              </Text>
+                <Text
+                  style={
+                    styles.transactionText
+                  }
+                >
+                  {getUserName(
+                    transaction.from_user_id
+                  )}
+                  {" "}
+                  pays
+                  {" "}
+                  {getUserName(
+                    transaction.to_user_id
+                  )}
+                </Text>
 
-              <Text style={styles.amount}>
-                ₹{transaction.amount}
-              </Text>
-            </View>
+                <Text style={styles.amount}>
+                  ₹{transaction.amount}
+                </Text>
+              </View>
+            )
           )
         )}
       </ScrollView>

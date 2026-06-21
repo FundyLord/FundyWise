@@ -10,7 +10,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
 
-import { useRoute } from "@react-navigation/native";
+import {
+  useRoute,
+  useNavigation,
+} from "@react-navigation/native";
 
 import {
   createExpense,
@@ -21,6 +24,7 @@ import { User } from "../types/models";
 
 export default function AddExpenseScreen() {
   const route = useRoute();
+  const navigation = useNavigation();
 
   const { groupId } = route.params as {
     groupId: number;
@@ -95,7 +99,20 @@ export default function AddExpenseScreen() {
 
       Alert.alert(
         "Success",
-        "Expense added successfully"
+        "Expense added successfully",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              console.log(
+                "Can Go Back:",
+                navigation.canGoBack()
+              );
+
+              navigation.goBack();
+            },
+          },
+        ]
       );
 
       setDescription("");

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,11 @@ import {
   ScrollView,
 } from "react-native";
 
-import { useNavigation } from "@react-navigation/native";
+import {
+  useNavigation,
+  useFocusEffect,
+} from "@react-navigation/native";
+
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { RootStackParamList } from "../navigation/AppNavigator";
@@ -27,23 +31,28 @@ export default function GroupsListScreen() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadGroups() {
-      try {
-        const data = await getGroups();
-        setGroups(data);
-      } catch (error) {
-        console.error(
-          "Failed to load groups:",
-          error
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
+  useFocusEffect(
+    useCallback(() => {
+      async function loadGroups() {
+        try {
+          setLoading(true);
 
-    loadGroups();
-  }, []);
+          const data = await getGroups();
+
+          setGroups(data);
+        } catch (error) {
+          console.error(
+            "Failed to load groups:",
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      loadGroups();
+    }, [])
+  );
 
   if (loading) {
     return (

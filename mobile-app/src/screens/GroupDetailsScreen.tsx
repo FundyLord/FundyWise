@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,9 +6,11 @@ import {
   Button,
   ScrollView,
 } from "react-native";
+
 import {
   useNavigation,
   useRoute,
+  useFocusEffect,
 } from "@react-navigation/native";
 
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -54,33 +56,37 @@ export default function GroupDetailsScreen() {
 
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadGroup() {
-      try {
-        const groupData =
-          await getGroup(groupId);
+  useFocusEffect(
+    useCallback(() => {
+      async function loadGroup() {
+        try {
+          setLoading(true);
 
-        const expenseData =
-          await getGroupExpenses(groupId);
+          const groupData =
+            await getGroup(groupId);
 
-        const memberData =
-          await getGroupMembers(groupId);
+          const expenseData =
+            await getGroupExpenses(groupId);
 
-        setGroup(groupData);
-        setExpenses(expenseData);
-        setMembers(memberData);
-      } catch (error) {
-        console.error(
-          "Failed to load group:",
-          error
-        );
-      } finally {
-        setLoading(false);
+          const memberData =
+            await getGroupMembers(groupId);
+
+          setGroup(groupData);
+          setExpenses(expenseData);
+          setMembers(memberData);
+        } catch (error) {
+          console.error(
+            "Failed to load group:",
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
       }
-    }
 
-    loadGroup();
-  }, [groupId]);
+      loadGroup();
+    }, [groupId])
+  );
 
   function getUserName(
     userId: number
