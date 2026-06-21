@@ -12,7 +12,8 @@ from app.schemas.settlement import (
 
 from app.services.settlement_service import (
     calculate_net_balances,
-    calculate_settlements
+    calculate_settlements, 
+    settle_group
 )
 
 router = APIRouter()
@@ -70,4 +71,30 @@ def get_group_settlements(
 
     return {
         "transactions": transactions
+    }
+
+@router.post(
+    "/groups/{group_id}/settle"
+)
+def settle_group_endpoint(
+    group_id: int,
+    db: Session = Depends(get_db)
+):
+    group = db.query(Group).filter(
+        Group.id == group_id
+    ).first()
+
+    if not group:
+        raise HTTPException(
+            status_code=404,
+            detail="Group not found"
+        )
+
+    settle_group(
+        db=db,
+        group_id=group_id
+    )
+
+    return {
+        "message": "Group settled successfully"
     }

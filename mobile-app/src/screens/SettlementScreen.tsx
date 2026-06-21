@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Alert,
+  Button,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,6 +23,7 @@ import {
 import {
   getSettlements,
   getUsers,
+  settleGroup,
 } from "../services/api";
 
 export default function SettlementScreen() {
@@ -38,33 +41,33 @@ export default function SettlementScreen() {
 
   const [loading, setLoading] = useState(true);
 
+  async function loadData() {
+    try {
+      setLoading(true);
+
+      const settlementData =
+        await getSettlements(groupId);
+
+      const usersData =
+        await getUsers();
+
+      setTransactions(
+        settlementData.transactions
+      );
+
+      setUsers(usersData);
+    } catch (error) {
+      console.error(
+        "Failed to load settlements:",
+        error
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useFocusEffect(
     useCallback(() => {
-      async function loadData() {
-        try {
-          setLoading(true);
-
-          const settlementData =
-            await getSettlements(groupId);
-
-          const usersData =
-            await getUsers();
-
-          setTransactions(
-            settlementData.transactions
-          );
-
-          setUsers(usersData);
-        } catch (error) {
-          console.error(
-            "Failed to load settlements:",
-            error
-          );
-        } finally {
-          setLoading(false);
-        }
-      }
-
       loadData();
     }, [groupId])
   );
@@ -81,6 +84,44 @@ export default function SettlementScreen() {
     return user
       ? user.name
       : `User ${userId}`;
+  }
+
+  async function handleSettleGroup() {
+    Alert.alert(
+      "Settle Group",
+      "This will clear all expenses for the current settlement cycle. Group and members will be kept.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: async () => {
+            try {
+              await settleGroup(groupId);
+
+              Alert.alert(
+                "Success",
+                "Group settled successfully"
+              );
+
+              await loadData();
+            } catch (error) {
+              console.error(
+                "Failed to settle group:",
+                error
+              );
+
+              Alert.alert(
+                "Error",
+                "Failed to settle group"
+              );
+            }
+          },
+        },
+      ]
+    );
   }
 
   if (loading) {
@@ -101,6 +142,15 @@ export default function SettlementScreen() {
         <Text style={styles.title}>
           Settlements
         </Text>
+
+        {transactions.length > 0 && (
+          <View style={styles.buttonContainer}>
+            <Button
+              title="Settle Group"
+              onPress={handleSettleGroup}
+            />
+          </View>
+        )}
 
         {transactions.length === 0 ? (
           <Text>
@@ -130,7 +180,7 @@ export default function SettlementScreen() {
                 </Text>
 
                 <Text style={styles.amount}>
-                  ₹{transaction.amount}
+                  ₹{transaction.amount.toFixed(2)}
                 </Text>
               </View>
             )
@@ -177,5 +227,9 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 20,
     fontWeight: "bold",
+  },
+
+  buttonContainer: {
+    marginBottom: 16,
   },
 });

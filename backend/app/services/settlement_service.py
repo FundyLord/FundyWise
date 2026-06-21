@@ -6,6 +6,8 @@ from sqlalchemy import select
 from app.db.models import Expense, ExpenseParticipant
 from algorithm.python.optimizer import minimize_transactions
 
+from sqlalchemy import delete
+
 def calculate_net_balances(
     db: Session,
     group_id: int
@@ -91,3 +93,35 @@ def calculate_settlements(
     return minimize_transactions(
         optimizer_input
     )
+
+def settle_group(
+    db: Session,
+    group_id: int
+):
+    expenses = db.execute(
+        select(Expense).where(
+            Expense.group_id == group_id
+        )
+    ).scalars().all()
+
+    expense_ids = [
+        expense.id
+        for expense in expenses
+    ]
+
+    if expense_ids:
+        db.execute(
+            delete(ExpenseParticipant).where(
+                ExpenseParticipant.expense_id.in_(
+                    expense_ids
+                )
+            )
+        )
+
+    db.execute(
+        delete(Expense).where(
+            Expense.group_id == group_id
+        )
+    )
+
+    db.commit()

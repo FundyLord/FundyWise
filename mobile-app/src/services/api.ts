@@ -101,3 +101,11 @@ export async function getGroupMembers(
 
   return response.data;
 }
+
+export async function settleGroup(
+  groupId: number
+): Promise<void> {
+  await api.post(
+    `/groups/${groupId}/settle`
+  );
+}
