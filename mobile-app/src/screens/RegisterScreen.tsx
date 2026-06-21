@@ -53,18 +53,8 @@ export default function RegisterScreen() {
 
     Alert.alert(
       "Success",
-      "Account created successfully",
-      [
-        {
-          text: "OK",
-          onPress: () =>
-            navigation.navigate(
-              "Login" as never
-            ),
-        },
-      ]
+      "Account created successfully"
     );
-
     setFullName("");
     setUsername("");
     setEmail("");
