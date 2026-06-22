@@ -9,7 +9,7 @@ import axios from "axios";
       User,
     } from "../types/models";
 
-const API_BASE_URL = "http://192.168.29.134:8000";
+const API_BASE_URL = "https://fundywise.onrender.com";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

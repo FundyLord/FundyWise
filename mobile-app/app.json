@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "expo-temp",
-    "slug": "expo-temp",
+    "name": "FundyWise",
+    "slug": "fundywise",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,10 +16,16 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.fundy_lord.fundywise"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e5d2735a-5808-4755-943f-a6fad457c036"
+      }
     }
   }
 }
