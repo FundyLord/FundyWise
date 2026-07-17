@@ -103,3 +103,87 @@ To ensure instant execution speeds, FundyWise utilizes a greedy heuristic that s
 > **Answer:**
 > "If we used a simple vector and sorted it after every settlement step, sorting would take $O(V \log V)$ time per transaction. Since we execute up to $V-1$ transactions, the total complexity would degrade to $O(V^2 \log V)$. 
 > By utilizing binary max-heaps (`std::priority_queue`), extracting the top elements takes $O(1)$ time, and re-inserting modified balances takes $O(\log V)$ time. This keeps our overall complexity strictly bounded to $O(V \log V)$, which scales exceptionally well as group sizes grow."
+
+---
+
+## 💻 Code Analysis: How the Graph is Optimized
+
+Below is the concrete C++ implementation from `debt_optimizer.cpp` demonstrating how the graph-based concepts are translated into executable instructions:
+
+```cpp
+std::vector<Transaction>
+minimizeTransactions(const std::vector<Expense>& expenses)
+{
+    // Step 1: Aggregate dense graph edges into net node balances
+    auto balances = computeNetBalances(expenses);
+
+    // Pair of: {balance_amount, user_id}
+    using HeapEntry = std::pair<double, int>; 
+
+    // Step 2: Separate nodes into source (debtors) and sink (creditors) pools
+    std::priority_queue<HeapEntry> creditors;
+    std::priority_queue<HeapEntry> debtors;
+
+    const double EPSILON = 1e-6; // Precision boundary
+
+    for (const auto& [user_id, balance] : balances)
+    {
+        if (balance > EPSILON)
+        {
+            creditors.push({balance, user_id});
+        }
+        else if (balance < -EPSILON)
+        {
+            debtors.push({-balance, user_id}); // Store absolute value
+        }
+    }
+
+    std::vector<Transaction> transactions;
+
+    // Step 3: Match nodes to find the optimal sparsified path
+    while (!creditors.empty() && !debtors.empty())
+    {
+        // Get vertex with maximum positive balance (sink)
+        auto [credit_amount, creditor_id] = creditors.top();
+        creditors.pop();
+
+        // Get vertex with maximum negative balance (source)
+        auto [debt_amount, debtor_id] = debtors.top();
+        debtors.pop();
+
+        // Calculate flow capacity for this transaction
+        double settled_amount = std::min(credit_amount, debt_amount);
+
+        // Add optimized edge to the output graph
+        transactions.push_back({
+            debtor_id,
+            creditor_id,
+            settled_amount
+        });
+
+        // Deduct flow
+        credit_amount -= settled_amount;
+        debt_amount -= settled_amount;
+
+        // If node still has flow capacity left, re-queue it
+        if (credit_amount > EPSILON)
+        {
+            creditors.push({credit_amount, creditor_id});
+        }
+
+        if (debt_amount > EPSILON)
+        {
+            debtors.push({debt_amount, debtor_id});
+        }
+    }
+
+    return transactions;
+}
+```
+
+### Graph Mapping Breakdown:
+1. **Edge-to-Node Reduction (`computeNetBalances`):** Before running the solver, we collapse all incoming and outgoing edges of each node. Instead of tracking *who* owes *whom*, we only track the net balance of each vertex.
+2. **Bipartite Heap Structure (`creditors` & `debtors`):** The priority queues divide our active nodes into a bipartite-like model: source nodes (who have outgoing flow) and sink nodes (who receive incoming flow). 
+3. **Flow Settlement (`std::min(...)`):** Matching the max creditor and max debtor represents the greedy selection of the largest sink and source. We greedily satisfy the largest sink capacity first, reducing the overall remaining node count as fast as possible.
+4. **Graph Sparsification:** By adding edges directly to the `transactions` array, we build the optimized, simplified graph $G'$ which satisfies the flow constraint while using the minimal number of edges.
+
