@@ -1,0 +1,105 @@
+# Graph-Based Optimization in FundyWise 🕸️
+
+This document details the mathematical modeling, graph theory concepts, and optimization strategies that power the **FundyWise** debt-simplification engine. Use this guide to prepare for technical discussions regarding graph algorithms, network flows, and complexity analysis.
+
+---
+
+## 1. Mathematical Modeling of the Transaction Graph
+
+To simplify debts, we first model the group expense ledger as a **Directed, Weighted Graph** $G = (V, E, W)$, where:
+* **Vertices ($V$):** The set of participants (users) in the group.
+* **Edges ($E$):** The directed debts between participants. An edge $e = (u, v)$ means user $u$ owes money to user $v$.
+* **Weights ($W$):** The numeric value of the debt. The weight $w(u, v)$ represents the exact amount of money $u$ owes to $v$.
+
+```
+   [ Dense Transaction Graph (Unoptimized) ]
+             
+               $20
+         (A) ------> (B)
+          |  \       ^
+          |   \ $10  |
+      $30 |    \     | $15
+          v     v    |
+         (C) ------> (D)
+               $25
+```
+
+---
+
+## 2. The Node Balance & Conservation Flow
+
+For any individual node (user) $u \in V$, we calculate their **net balance** $B_u$. The net balance is the difference between the total money they are owed (incoming value) and the total money they owe to others (outgoing value):
+
+$$B_u = \sum_{(v, u) \in E} w(v, u) - \sum_{(u, v) \in E} w(u, v)$$
+
+### Properties of the Balance Set:
+1. **Net Zero Conservation:** The sum of all net balances in a closed group is always zero:
+   $$\sum_{u \in V} B_u = 0$$
+2. **Node Classification:**
+   * If $B_u > 0$, the node is a **Net Creditor** (they should receive money).
+   * If $B_u < 0$, the node is a **Net Debtor** (they must pay money).
+   * If $B_u = 0$, the node is **Balanced** and is excluded from the settlement graph.
+
+---
+
+## 3. The Optimization Problem: Graph Sparsification
+
+The core objective of the settlement engine is to find a **simplified transaction graph** $G' = (V, E', W')$ that satisfies two constraints:
+
+1. **Conservation of Balance:** The net balance of every node in the optimized graph $G'$ must be identical to its balance in the original graph $G$:
+   $$B'_u = B_u \quad \forall u \in V$$
+2. **Minimization of Edges (Transactions):** Minimize the number of active edges in $G'$:
+   $$\min |E'|$$
+
+In graph theory, this is known as **Graph Sparsification under Flow Conservation Constraints**.
+
+---
+
+## 4. Algorithmic Complexity: The NP-Complete Constraint
+
+Finding the *absolute minimum* number of transactions is equivalent to finding the maximum number of disjoint, independent subsets of nodes whose net balances sum to zero. 
+* This is a direct variation of the **Subset Sum Problem** (specifically the **Partition Problem**), which is classified as **NP-complete**.
+* Solving this exactly for large groups requires checking all combinations, scaling exponentially at $O(2^V)$ time complexity.
+
+### The FundyWise Greedy Solution (The Max-Heap Heuristic)
+To ensure instant execution speeds, FundyWise utilizes a greedy heuristic that scales at **$O(V \log V)$** time complexity. 
+
+```
+[ Creditors Max-Heap ]                [ Debtors Max-Heap ]
+  (Top: Max Balance)                    (Top: Max Debt)
+       [+$50]                                [-$40]
+       [+$20]                                [-$30]
+          \                                     /
+           \-- Settle: Debtor pays Creditor ---/
+               Amount = min(+$50, |-$40|) = $40
+```
+
+1. **Classify Nodes:** Push all creditors ($B_u > 0$) into a Max-Heap $H_c$, and all debtors ($B_u < 0$) into a Min-Heap $H_d$ (using absolute values).
+2. **Extract Extremes:** Pop the largest creditor ($u_c$) and the largest debtor ($u_d$) from the tops of the heaps. This represents the two nodes furthest from balance.
+3. **Greedy Settlement:**
+   * Calculate the transfer amount: $S = \min(B_{u_c}, |B_{u_d}|)$.
+   * Record the edge in $G'$: $u_d \rightarrow u_c$ with weight $S$.
+   * Update balances: $B_{u_c} \leftarrow B_{u_c} - S$ and $B_{u_d} \leftarrow B_{u_d} + S$.
+   * Re-insert any non-zero balances back into their heaps.
+4. **Repeat** until both heaps are empty.
+
+### Theoretical Bounds:
+* This greedy algorithm guarantees that the final transaction count will be at most **$V - 1$**, which is highly optimal for practical group expenses.
+
+---
+
+## 5. Interview Q&A Guide: Pitching the Graph Optimization
+
+### Q1: Why do you call this a "graph-based optimization" rather than just a sorting algorithm?
+> **Answer:** 
+> "Because the input ledger represents a directed, weighted graph where nodes are users and edges are individual transactions. The core goal is to optimize the topology of this graph—reducing the edge count $|E|$ to at most $V-1$—while preserving the net flow (balance) at each vertex. We use priority queue heaps as a data structure to traverse and simplify this transaction graph efficiently."
+
+### Q2: Why didn't you use a standard Max-Flow Min-Cut algorithm (like Dinic's or Ford-Fulkerson)?
+> **Answer:**
+> "Max-Flow algorithms are designed to find the maximum bottleneck capacity through a single source-to-sink pipeline. Our problem is different: we have multiple sources (debtors) and multiple sinks (creditors) with no fixed bottleneck pipes. 
+> While we could model this as a **Minimum Cost Flow (MCF)** problem on a bipartite network, solving MCF exactly takes $O(V^2 E \log V)$ or higher. The greedy heap heuristic executes in $O(V \log V)$ time, runs instantly on mobile and server environments, and guarantees a final edge count of at most $V-1$, which is practically optimal for peer-to-peer expense sharing."
+
+### Q3: What is the computational difference between your heap approach and sorting a vector at each step?
+> **Answer:**
+> "If we used a simple vector and sorted it after every settlement step, sorting would take $O(V \log V)$ time per transaction. Since we execute up to $V-1$ transactions, the total complexity would degrade to $O(V^2 \log V)$. 
+> By utilizing binary max-heaps (`std::priority_queue`), extracting the top elements takes $O(1)$ time, and re-inserting modified balances takes $O(\log V)$ time. This keeps our overall complexity strictly bounded to $O(V \log V)$, which scales exceptionally well as group sizes grow."
